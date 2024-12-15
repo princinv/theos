@@ -131,10 +131,30 @@ get_theos() {
 		update "Theos appears to already be installed. Checking for updates..."
 		$THEOS/bin/update-theos
 	else
-		update "Theos does not appear to be installed. Cloning now..."
-		git clone --recursive https://github.com/theos/theos.git $THEOS \
-			&& update "Git clone of Theos was successful!" \
-			|| (error "Theos git clone command seems to have encountered an error. Please see the log above."; exit 6)
+		update "Theos does not appear to be installed. Downloading now using curl..."
+		
+		# Ensure the THEOS directory exists
+		mkdir -p "$THEOS"
+		
+		# Download Theos as a zip archive using curl with DNS override
+		curl --dns-servers 1.1.1.1 -L https://github.com/theos/theos/archive/refs/heads/master.zip -o /tmp/theos.zip \
+			&& update "Download of Theos was successful!" \
+			|| (error "Theos download seems to have encountered an error. Please see the log above."; exit 6)
+		
+		# Extract the zip file
+		unzip -q /tmp/theos.zip -d /tmp \
+			&& update "Extraction of Theos was successful!" \
+			|| (error "Extraction of Theos zip file failed."; exit 6)
+		
+		# Move extracted content to $THEOS
+		mv /tmp/theos-master/* "$THEOS" \
+			&& update "Theos files moved successfully!" \
+			|| (error "Failed to move Theos files to $THEOS."; exit 6)
+		
+		# Cleanup temporary files
+		rm -rf /tmp/theos.zip /tmp/theos-master
+		
+		update "Theos installation is complete!"
 	fi
 }
 
