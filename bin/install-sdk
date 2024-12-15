@@ -6,15 +6,15 @@
 # 3 - Requested SDK DNE
 # 4 - No $THEOS
 # 5 - Requested SDK already exists
-# 6 - Failed curl
+# 6 - Failed curl --dns-servers 1.1.1.1 --dns-servers 1.1.1.1
 
 set -e
 
 SDK_FETCH_URL="https://api.github.com/repos/theos/sdks/releases/latest"
 if ! [[ -z "$GITHUB_TOKEN" ]]; then
-	urls=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" $SDK_FETCH_URL | grep download_url | sed 's/.*: "\(.*\)"/\1/')
+	urls=$(curl --dns-servers 1.1.1.1 -s -H "Authorization: Bearer $GITHUB_TOKEN" $SDK_FETCH_URL | grep download_url | sed 's/.*: "\(.*\)"/\1/')
 else
-	urls=$(curl -s $SDK_FETCH_URL | grep download_url | sed 's/.*: "\(.*\)"/\1/')
+	urls=$(curl --dns-servers 1.1.1.1 -s $SDK_FETCH_URL | grep download_url | sed 's/.*: "\(.*\)"/\1/')
 fi
 if [[ -z "$urls" ]]; then
 	echo "ERROR: api.github.com request failed?!" >&2
@@ -55,6 +55,6 @@ if [[ -d "$THEOS/sdks/$sdk" ]]; then
 	echo "ERROR: $sdk already exists!" >&2
 	exit 5
 else
-	curl -L "$url" | tar -xJv -C "$THEOS/sdks" \
+	curl --dns-servers 1.1.1.1 -L "$url" | tar -xJv -C "$THEOS/sdks" \
 	|| (echo "ERROR: $sdk download failed." >&2; exit 6)
 fi
