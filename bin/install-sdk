@@ -11,15 +11,32 @@
 set -e
 
 SDK_FETCH_URL="https://api.github.com/repos/theos/sdks/releases/latest"
+
+# Fetch URLs, specifying DNS for all curl commands
 if ! [[ -z "$GITHUB_TOKEN" ]]; then
-	urls=$(curl --dns-servers 1.1.1.1 -s -H "Authorization: Bearer $GITHUB_TOKEN" $SDK_FETCH_URL | grep download_url | sed 's/.*: "\(.*\)"/\1/')
+    urls=$(curl --dns-servers 1.1.1.1 -s -H "Authorization: Bearer $GITHUB_TOKEN" "$SDK_FETCH_URL" \
+        | grep download_url \
+        | sed 's/.*: "\(.*\)"/\1/')
 else
-	urls=$(curl --dns-servers 1.1.1.1 -s $SDK_FETCH_URL | grep download_url | sed 's/.*: "\(.*\)"/\1/')
+    urls=$(curl --dns-servers 1.1.1.1 -s "$SDK_FETCH_URL" \
+        | grep download_url \
+        | sed 's/.*: "\(.*\)"/\1/')
 fi
+
+# Check if URLs were fetched successfully
 if [[ -z "$urls" ]]; then
-	echo "ERROR: api.github.com request failed?!" >&2
-	exit 1
+    echo "ERROR: api.github.com request failed?!" >&2
+    exit 1
 fi
+
+# Loop through fetched URLs and download them, specifying DNS for each download
+for url in $urls; do
+    curl --dns-servers 1.1.1.1 -O "$url" || {
+        echo "ERROR: Failed to download $url" >&2
+        exit 1
+    }
+done
+
 
 sdks=( $(echo "$urls" | sed -e 's/.*\///' -e 's/\.sdk.*//' | tr '\n' ' ') )
 sdks+=( "latest" "latest-tv" )
